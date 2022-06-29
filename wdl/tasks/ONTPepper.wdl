@@ -107,7 +107,7 @@ task Pepper {
         boot_disk_gb:       100,
         preemptible_tries:  1,
         max_retries:        1,
-        docker:             "kishwars/pepper_deepvariant:r0.4.1"
+        docker:             "kishwars/pepper_deepvariant:r0.8" # note there's a r0.8-gpu, we still need to re-evaluate if GPU helps in our use case
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {

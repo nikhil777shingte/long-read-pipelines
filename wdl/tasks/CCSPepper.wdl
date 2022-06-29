@@ -143,7 +143,7 @@ task Pepper {
         boot_disk_gb:       100,
         preemptible_tries:  1,
         max_retries:        1,
-        docker:             "kishwars/pepper_deepvariant:r0.4.1"
+        docker:             "kishwars/pepper_deepvariant:r0.8"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -316,7 +316,7 @@ task MarginPhase {
         boot_disk_gb:       100,
         preemptible_tries:  3,
         max_retries:        0,
-        docker:             "kishwars/pepper_deepvariant:r0.4.1"
+        docker:             "kishwars/pepper_deepvariant:r0.8"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
