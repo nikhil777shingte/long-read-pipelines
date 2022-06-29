@@ -231,7 +231,7 @@ task DV {
         boot_disk_gb:       100,
         preemptible_tries:  3,
         max_retries:        0,
-        docker:             "us.gcr.io/broad-dsp-lrma/lr-deepvariant:1.3.0"
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-deepvariant:1.4.0"
         # docker:             "google/deepvariant:1.2.0-gpu"  # kept here to remind ourselves, occassionally, to review if it's better with GPU
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
