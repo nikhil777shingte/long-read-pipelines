@@ -42,3 +42,47 @@ task GetReadGroupInfo {
         docker: "us.gcr.io/broad-dsp-lrma/lr-basic:0.1.1"
     }
 }
+
+task GetPileup {
+    meta {
+        desciption:
+        "Get pileup information with samtools mpileup. Current cmdline options are '-a -s -q 1 [-E|-B]' "
+    }
+
+    input {
+        File bam
+        File bai
+        Boolean disable_baq
+        String prefix
+        File ref_fasta
+    }
+
+    String baq_option = if disable_baq then '-B' else '-E'
+
+    command <<<
+        set -eux
+
+        samtools mpileup \
+            ~{baq_option} \
+            -a \
+            -s \
+            -q 1 \
+            -f ~{ref_fasta} \
+            -o ~{prefix}.mpileup \
+            ~{bam}
+    >>>
+
+    output {
+        File pileup = "~{prefix}.mpileup"
+    }
+
+    runtime {
+        cpu:            1
+        memory:         "4 GiB"
+        disks:          "local-disk 100 HDD"
+        bootDiskSizeGb: 10
+        preemptible:    2
+        maxRetries:     1
+        docker: "us.gcr.io/broad-dsp-lrma/lr-basic:0.1.1"
+    }
+}
