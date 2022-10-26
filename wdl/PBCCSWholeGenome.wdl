@@ -23,6 +23,7 @@ workflow PBCCSWholeGenome {
         File ref_map_file
 
         String participant_name
+        String extra_name
 
         String gcs_out_root_dir
 
@@ -64,7 +65,7 @@ workflow PBCCSWholeGenome {
 
     Map[String, String] ref_map = read_map(ref_map_file)
 
-    String outdir = sub(gcs_out_root_dir, "/$", "") + "/PBCCSWholeGenome/~{participant_name}"
+    String outdir = sub(gcs_out_root_dir, "/$", "") + "/PBCCSWholeGenome-RL-sample/~{participant_name}-~{extra_name}"
 
     # gather across (potential multiple) input CCS BAMs
     if (length(aligned_bams) > 1) {
@@ -92,9 +93,9 @@ workflow PBCCSWholeGenome {
 
     String dir = outdir + "/alignments"
 
-    call FF.FinalizeToFile as FinalizeBam { input: outdir = dir, file = bam, name = "~{participant_name}.bam" }
-    call FF.FinalizeToFile as FinalizeBai { input: outdir = dir, file = bai, name = "~{participant_name}.bam.bai" }
-    call FF.FinalizeToFile as FinalizePbi { input: outdir = dir, file = pbi, name = "~{participant_name}.bam.pbi" }
+    call FF.FinalizeToFile as FinalizeBam { input: outdir = dir, file = bam, name = "~{participant_name}-~{extra_name}.bam" }
+    call FF.FinalizeToFile as FinalizeBai { input: outdir = dir, file = bai, name = "~{participant_name}-~{extra_name}.bam.bai" }
+    call FF.FinalizeToFile as FinalizePbi { input: outdir = dir, file = pbi, name = "~{participant_name}-~{extra_name}.bam.pbi" }
 
     if (defined(bed_to_compute_coverage)) { call FF.FinalizeToFile as FinalizeRegionalCoverage { input: outdir = dir, file = select_first([coverage.bed_cov_summary]) } }
 
@@ -144,11 +145,11 @@ workflow PBCCSWholeGenome {
         String smalldir = outdir + "/variants/small"
 
         if (call_svs) {
-            call FF.FinalizeToFile as FinalizePBSV { input: outdir = svdir, file = select_first([CallVariants.pbsv_vcf]) }
-            call FF.FinalizeToFile as FinalizePBSVtbi { input: outdir = svdir, file = select_first([CallVariants.pbsv_tbi]) }
+            call FF.FinalizeToFile as FinalizePBSV { input: outdir = svdir, file = select_first([CallVariants.pbsv_vcf]), name = "~{participant_name}-~{extra_name}.pbsv.vcf.gz"}
+            call FF.FinalizeToFile as FinalizePBSVtbi { input: outdir = svdir, file = select_first([CallVariants.pbsv_tbi]), name = "~{participant_name}-~{extra_name}.pbsv.vcf.gz.tbi"}
 
-            call FF.FinalizeToFile as FinalizeSniffles { input: outdir = svdir, file = select_first([CallVariants.sniffles_vcf]) }
-            call FF.FinalizeToFile as FinalizeSnifflesTbi { input: outdir = svdir, file = select_first([CallVariants.sniffles_tbi]) }
+            call FF.FinalizeToFile as FinalizeSniffles { input: outdir = svdir, file = select_first([CallVariants.sniffles_vcf]), name = "~{participant_name}-~{extra_name}.sniffles.vcf.gz"}
+            call FF.FinalizeToFile as FinalizeSnifflesTbi { input: outdir = svdir, file = select_first([CallVariants.sniffles_tbi]), name = "~{participant_name}-~{extra_name}.sniffles.vcf.gz.tbi"}
         }
 
         if (call_small_variants) {
