@@ -18,6 +18,8 @@ workflow LongReadsContaminationEstimation {
         Boolean is_100k_sites
 
         Boolean disable_baq
+
+        Array[String] random_gcp_zones = ["us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"]
     }
 
     parameter_meta {
@@ -26,10 +28,13 @@ workflow LongReadsContaminationEstimation {
         is_hgdp_sites:    "Provided BED is HGDP genotyping sites."
         is_100k_sites:    "Provided BED is 100k genotyping sites, not 10k sites."
         disable_baq:      "If turned on, BAQ computation will be disabled (faster operation)."
+        random_gcp_zones: "An parameter for rush processing: if provided, compute will happen in the requested zones"
     }
 
     # quickly change to pileup
     Map[String, String] ref_map = read_map(ref_map_file)
+    call CollapseStrings {input: whatever = random_gcp_zones}
+    String collapsed_zones = CollapseStrings.collapsed
 
     Int scaleup_factor = 20
     call Utils.ComputeAllowedLocalSSD {input: intended_gb = floor(scaleup_factor * size(bam, "GB")) + 1}
@@ -40,15 +45,35 @@ workflow LongReadsContaminationEstimation {
             bed = gt_sites_bed,
             ref_fasta = ref_map['fasta'],
             disable_baq = disable_baq,
-            local_ssd_cnt = ComputeAllowedLocalSSD.numb_of_local_ssd
+            local_ssd_cnt = ComputeAllowedLocalSSD.numb_of_local_ssd,
+            zones = collapsed_zones
     }
 
     call VerifyBamID {
-        input: pileup = Pileup.pileups, ref_fasta = ref_map['fasta'], is_hgdp_sites = is_hgdp_sites, is_100k_sites = is_100k_sites
+        input: pileup = Pileup.pileups, ref_fasta = ref_map['fasta'], is_hgdp_sites = is_hgdp_sites, is_100k_sites = is_100k_sites, zones = collapsed_zones
     }
 
     output {
         Float contamination_est = VerifyBamID.contamination_est
+    }
+}
+
+task CollapseStrings {
+    input {
+        Array[String] whatever
+    }
+
+    command <<<
+        echo ~{sep=' ' whatever}
+    >>>
+
+    output {
+        String collapsed = read_string(stdout())
+    }
+
+    runtime {
+        disks: "local-disk 50 HDD"
+        docker: "gcr.io/cloud-marketplace/google/ubuntu2004:latest"
     }
 }
 
@@ -64,6 +89,7 @@ task BamToRelevantPileup {
         File ref_fasta
         Boolean disable_baq
         Int local_ssd_cnt
+        String zones
     }
 
     String baq_option = if disable_baq then '-B' else '-E'
@@ -123,6 +149,7 @@ task BamToRelevantPileup {
         preemptible:    1
         maxRetries:     1
         docker: "us.gcr.io/broad-dsp-lrma/lr-basic:0.1.1"
+        zones: zones
     }
 }
 
@@ -136,6 +163,7 @@ task VerifyBamID {
         File ref_fasta
         Boolean is_hgdp_sites
         Boolean is_100k_sites
+        String zones
     }
 
     String a = if is_hgdp_sites then 'hgdp' else '1000g.phase3'
@@ -171,5 +199,6 @@ task VerifyBamID {
         memory: "16 GiB"
         disks: "local-disk 375 LOCAL"
         docker: "us.gcr.io/broad-dsp-lrma/verifybamid2:v2.0.1"
+        zones: zones
     }
 }
