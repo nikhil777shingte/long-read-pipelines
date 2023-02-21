@@ -9,12 +9,13 @@ RUN apt-get -qqy update --fix-missing && \
                  python3 \
                  python3-pip && \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir dyst pandas==1.4.3
+    pip install --no-cache-dir dyst pandas==1.4.3 scipy==1.10.1
 
 # some custom work to make dyst working in docker
 COPY modified.dyst /usr/local/bin/dyst
 COPY find_peaks.py /opt/
 COPY reverse_yield.py /opt/
+COPY measure_g1_skew.py /opt/
 
 # # test installation
 # COPY lengths.txt /tmp/
