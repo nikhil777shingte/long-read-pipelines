@@ -54,21 +54,10 @@ workflow Sniffles2 {
     }
 }
 
-
-
 task SampleSV {
 
     meta {
         description: "This task calls SV candidates from a single sample."
-    }
-
-    input {
-        File bam
-        File bai
-        Int minsvlen = 50
-        String sample_id
-        String prefix
-        RuntimeAttr? runtime_attr_override
     }
 
     parameter_meta {
@@ -77,12 +66,26 @@ task SampleSV {
         minsvlen:         "minimum SV length in bp. Default 50"
         sample_id:        "Sample ID"
         prefix:           "prefix for output"
+        phase_sv:         "if you're sure the BAM is phased/haplotagged, turn this on to generate phased SV"
+        tandem_repeat_bed: "BED file containing TRF finder (e.g. http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.trf.bed.gz)"
+    }
+
+    input {
+        File bam
+        File bai
+        Int minsvlen = 50
+        String sample_id
+        String prefix
+        File? tandem_repeat_bed
+        Boolean phase_sv = false
+        RuntimeAttr? runtime_attr_override
     }
 
     Int cpus = 8
     Int disk_size = 2*ceil(size([bam, bai], "GB"))
     String snf_output = "~{prefix}.sniffles.snf"
-    String vcf_output = "~{prefix}.sniffles.vcf"
+    String vcf_output = "~{prefix}.sniffles.vcf.gz"
+    String tbi_output = "~{prefix}.sniffles.vcf.gz.tbi"
 
     command <<<
         set -eux
@@ -91,14 +94,16 @@ task SampleSV {
                  -i ~{bam} \
                  --minsvlen ~{minsvlen} \
                  --sample-id ~{sample_id} \
+                 ~{if defined(tandem_repeat_bed) then "--tandem-repeats ~{tandem_repeat_bed}" else ""} \
+                 ~{true="--phase" false="" phase_sv} \
                  --vcf ~{vcf_output} \
                  --snf ~{snf_output}
-        tree
     >>>
 
     output {
         File snf = "~{snf_output}"
         File vcf = "~{vcf_output}"
+        File tbi = "~{tbi_output}"
     }
 
     #########################
@@ -109,7 +114,7 @@ task SampleSV {
         boot_disk_gb:       10,
         preemptible_tries:  3,
         max_retries:        2,
-        docker:             "us.gcr.io/broad-dsp-lrma/lr-sniffles2:2.0.6"
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-sniffles2:2.0.7"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
@@ -122,7 +127,6 @@ task SampleSV {
         docker:                 select_first([runtime_attr.docker,            default_attr.docker])
     }
 }
-
 
 task MergeCall {
 
@@ -161,7 +165,7 @@ task MergeCall {
         boot_disk_gb:       10,
         preemptible_tries:  3,
         max_retries:        2,
-        docker:             "us.gcr.io/broad-dsp-lrma/lr-sniffles2:2.0.6"
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-sniffles2:2.0.7"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
