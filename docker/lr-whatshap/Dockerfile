@@ -1,20 +1,31 @@
-FROM continuumio/miniconda3
+############### stage 0
+FROM continuumio/miniconda3 AS build
 
-MAINTAINER Kiran V Garimella
+# Install the package as normal:
+COPY environment.yml .
+RUN conda env create -f environment.yml
 
-# copy other resources
-COPY ./environment.yml /
+# Install conda-pack:
+RUN conda install -c conda-forge conda-pack && \
+    conda clean -a
 
-RUN apt-get -y update && \
-    apt-get -y install curl zlib1g-dev libcurl4-openssl-dev libbz2-dev liblzma-dev gcc make && \
-    apt-get clean
+# Use conda-pack to create a standalone enviornment
+# in /venv:
+RUN conda-pack \
+    -n lr-whatshap \
+    -o /tmp/env.tar && \
+    mkdir /venv && cd /venv && tar xf /tmp/env.tar && \
+    rm /tmp/env.tar
 
-# install conda packages
-RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH=/opt/conda/envs/lr-whatshap/bin/:/root/google-cloud-sdk/bin/:${PATH}
+# We've put venv in same path it'll be in final image,
+# so now fix up paths:
+RUN /venv/bin/conda-unpack
 
-# install gsutil
-RUN curl https://sdk.cloud.google.com | bash
+############### stage 1
+FROM ubuntu:20.04 AS runtime
 
-# activate conda environment
-RUN echo "source activate lr-whatshap" > ~/.bashrc
+# Copy /venv from the previous stage:
+COPY --from=build /venv /venv
+
+ENV VIRTUAL_ENV=/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
