@@ -50,7 +50,7 @@ task HaploTagBam {
             ~{vcf_prefix}.vcf.gz \
             ~{prefix}.bam
 
-        satmools index -@3 ~{prefix}.whatshap-haplotagged.bam
+        samtools index -@3 ~{prefix}.whatshap-haplotagged.bam
     >>>
 
     #########################
@@ -66,7 +66,7 @@ task HaploTagBam {
     runtime {
         cpu:                    select_first([runtime_attr.cpu_cores,         default_attr.cpu_cores])
         memory:                 select_first([runtime_attr.mem_gb,            default_attr.mem_gb]) + " GiB"
-        disks: "local-disk " +  select_first([runtime_attr.disk_gb,           default_attr.disk_gb]) + " HDD"
+        disks: "local-disk " +  select_first([runtime_attr.disk_gb,           default_attr.disk_gb]) + " SSD"
         preemptible:            select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
         maxRetries:             select_first([runtime_attr.max_retries,       default_attr.max_retries])
         docker:                 select_first([runtime_attr.docker,            default_attr.docker])
@@ -91,11 +91,13 @@ task Phase {
         File unphased_vcf
         File unphased_tbi
 
+        String? chromosome
+
         RuntimeAttr? runtime_attr_override
     }
 
     String bam_prefix = basename(bam, ".bam")
-    String vcf_prefix = basename(unphased_vcf, ".vcf.gz")
+    String vcf_prefix = basename(unphased_vcf, ".vcf.gz") + if (defined(chromosome)) then ".~{chromosome}" else ""
 
     output {
         File phased_vcf = "~{vcf_prefix}.whatshap-phased.vcf.gz"
@@ -103,6 +105,7 @@ task Phase {
     }
 
     Int disk_size = 10 + 2*ceil(size([bam, unphased_vcf], "GiB"))
+    String extra_args = if (defined(chromosome)) then "--chromosome "  + select_first([chromosome]) else ""
 
     command <<<
         set -eux
@@ -116,6 +119,7 @@ task Phase {
         whatshap phase \
             --indels \
             -o ~{vcf_prefix}.whatshap-phased.vcf.gz \
+            ~{extra_args} \
             --reference ~{ref_fasta} \
             ~{vcf_prefix}.vcf.gz \
             ~{bam_prefix}.bam
@@ -182,9 +186,10 @@ task Stats {
         # for use with MultiQC
         whatshap stats \
             --tsv=~{vcf_prefix}.whatshap-stats.tsv \
-            ~{phased_vcf} &
+            ~{vcf_prefix}.vcf.gz &
 
         wait
+        ls
     >>>
 
     #########################
