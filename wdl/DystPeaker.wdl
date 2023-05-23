@@ -139,6 +139,7 @@ task GetLengthsFromFastq {
         File fastq
     }
 
+    Int disk_size = 2 * ceil(size(fastq, "GiB"))
     command <<<
         set -eux
 
@@ -152,7 +153,7 @@ task GetLengthsFromFastq {
     runtime {
         cpu: 2
         memory: "8 GiB"
-        disks: "local-disk 100 HDD"
+        disks: "local-disk ~{disk_size} HDD"
         docker: "us.gcr.io/broad-dsp-lrma/lr-basic:0.1.1"
     }
 }
