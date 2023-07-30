@@ -103,7 +103,7 @@ task SplitNameSortedUbam {
     Boolean fail = defined(n_reads) == defined(n_files)  # mutually exclusive
 
     Int X = select_first([n_reads, n_files])
-    String split_arg = if defined(n_reads) then "--SPLIT_TO_N_READS {X}" else "--SPLIT_TO_N_FILES ~{X}"
+    String split_arg = if defined(n_reads) then "--SPLIT_TO_N_READS ~{X}" else "--SPLIT_TO_N_FILES ~{X}"
     String helper_arg = if (defined(read_cnt)) then "--TOTAL_READS_IN_INPUT ~{read_cnt}" else " "
 
     Int disk_size = 20 + ceil(11 * size(uBAM, "GiB"))
