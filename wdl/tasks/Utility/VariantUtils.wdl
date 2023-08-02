@@ -38,6 +38,8 @@ task MergePerChrCalls {
         $GREPCMD -m1 CHROM $VCF_WITH_HEADER >> header
 
         ((cat header) && ($GREPCMD -h -v '^#' ~{sep=' ' vcfs})) | bcftools sort | bgzip > ~{prefix}.vcf.gz
+        echo $?
+        ls
         tabix -p vcf ~{prefix}.vcf.gz
     >>>
 
