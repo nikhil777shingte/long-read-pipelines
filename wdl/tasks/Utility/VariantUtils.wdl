@@ -37,7 +37,7 @@ task MergePerChrCalls {
         grep '^@SQ' ~{ref_dict} | awk '{ print "##contig=<ID=" $2 ",length=" $3 ">" }' | sed 's/[SL]N://g' >> header.txt
         $GREPCMD -m1 CHROM $VCF_WITH_HEADER >> header.txt
 
-        (cat header.txt <($GREPCMD -h -v '^#' ~{sep=' ' vcfs}) | bcftools sort | bgzip > ~{prefix}.vcf.gz) || echo "that failed"
+        (cat header.txt <($GREPCMD -h -v '^#' ~{sep=' ' vcfs}) | bcftools sort | bgzip > ~{prefix}.vcf.gz)
         echo $?
         ls
         tabix -p vcf ~{prefix}.vcf.gz
