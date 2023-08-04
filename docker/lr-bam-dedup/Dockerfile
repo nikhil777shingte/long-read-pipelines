@@ -1,6 +1,7 @@
 FROM python:3.9.16-slim-bullseye
 
 COPY remove_duplicate_ont_aln.py /opt/
+COPY remove_duplicate_ont_namesorted_unaligned.py /opt/
 
 RUN pip install pysam==0.21.0
 
