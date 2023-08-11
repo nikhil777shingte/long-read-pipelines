@@ -271,3 +271,195 @@ task GetBasecallModel {
         docker: "us.gcr.io/broad-dsp-lrma/lr-basic:0.1.2"
     }
 }
+
+task DeduplicateONTAlignedBam {
+
+    meta {
+        description: "Utility to drop (occationally happening) literal duplicate records in input BAM."
+    }
+
+    parameter_meta {
+        aligned_bam: {
+            localization_optional: true,
+            description: "input BAM file (must be coordinate sorted)."
+        }
+        aligned_bai: "input BAM index file"
+        same_name_as_input: "if true, output BAM will have the same name as input BAM, otherwise it will have the input basename with .dedup suffix"
+        runtime_attr_override: "override default runtime attributes"
+    }
+
+    input {
+        File  aligned_bam
+        File? aligned_bai
+
+        Boolean same_name_as_input = true
+
+        RuntimeAttr? runtime_attr_override
+    }
+
+    Int disk_size = 3 * ceil(size(aligned_bam, "GB"))
+
+    String base = basename(aligned_bam, ".bam")
+    String prefix = if (same_name_as_input) then base else (base + ".dedup")
+
+    String local_bam = "/cromwell_root/~{base}.bam"
+    String local_bai = "/cromwell_root/~{base}.bam.bai"
+
+    command <<<
+        set -eux
+
+        # here we use an optimization, that is, in stead of relying on the slow Cromwell localization,
+        # we explicity localize the bam in the with gcloud storage cp
+        time gcloud storage cp ~{aligned_bam} ~{local_bam}
+
+        echo "==========================================================="
+        echo "verify input bam is sorted by coordinate"
+        samtools view -H ~{local_bam} | grep "@HD" > hd.line
+        if ! grep -qF "SO:coordinate" hd.line;
+        then
+            echo "BAM must be coordinate sorted!" && echo && cat hd.line && exit 1
+        fi
+
+        echo "index if bai not provided"
+        if ~{defined(aligned_bai)}; then
+            mv ~{aligned_bai} ~{local_bai}
+        else
+            time samtools index -@3 "~{local_bam}"
+        fi
+        echo "==========================================================="
+        echo "collecting duplicate information"
+        time \
+            samtools view -@ 1 "~{local_bam}" | \
+            awk -F '\t' 'BEGIN{OFS="\t"} {print $1, $2, $3, $4, $5, $6}' | \
+            sort | uniq -d \
+            > "~{base}".duplicates.txt
+
+        cnt=$(wc -l "~{base}".duplicates.txt | awk '{print $1}')
+        if [[ ${cnt} -eq 0 ]];
+        then
+            echo "No duplicates found"
+            if ! ~{same_name_as_input} ;
+            then
+                mv "~{local_bam}" "~{prefix}.bam"
+                mv "~{local_bai}" "~{prefix}.bam.bai"  # when input bai isn't provided, an explicit index run happened above, so we're safe here
+            fi
+            exit 0
+        else
+            echo "Amongst the mapped reads, ${cnt} unique duplicate signates found."
+        fi
+        echo "==========================================================="
+        echo "DE-DUPLICATION STARTED"
+        # here we treat the de-duplication per-chrmosome (unmapped reads are treated separately too)
+
+        echo "######################################"
+        # unmapped deduplication
+        samtools view -@3 -f4 -o unmapped.bam "~{local_bam}"
+        samtools view unmapped.bam | awk -F '\t' '{print $1}' | sort | uniq -d > duplicated.unmapped.reads.txt
+        touch duplicated.unmapped.reads.txt
+        cat duplicated.unmapped.reads.txt
+        cnt=$(wc -l duplicated.unmapped.reads.txt | awk '{print $1}')
+        if [[ ${cnt} -eq 0 ]]; then
+            echo "No duplicates found in the unmapped reads"
+            mv unmapped.bam unmapped.dedup.bam
+        else
+            # sort by queryname (note that natural-order or ascii-order doesn't matter, as long as it's self-consistent)
+            samtools sort -@1 -n -o unmapped.qname-sort.bam unmapped.bam
+            python3 /opt/remove_duplicate_ont_namesorted_unaligned.py \
+                -p unmapped.dedup.to-be-sorted \
+                -q unmapped.dup-reads-by-python.txt \
+                unmapped.qname-sort.bam
+            cat unmapped.dup-reads-by-python.txt
+            samtools sort -@1 -o unmapped.dedup.bam unmapped.dedup.to-be-sorted.bam
+
+            rm unmapped.bam unmapped.qname-sort.bam unmapped.dedup.to-be-sorted.bam  # save disk space
+        fi
+        echo "######################################"
+        # per-chr de-duplication
+        ##########
+        # first, see which chromosomes needs deduplication
+        awk -F '\t' '{print $3}' "~{base}".duplicates.txt | sort | uniq > contigs.with.dups.txt
+        cat contigs.with.dups.txt
+        samtools view -H "~{local_bam}" | grep "^@SQ" | awk -F '\t' '{print $2}' | awk -F ':' '{print $2}' > all.contigs.in.reference.txt
+        comm -23 <(sort all.contigs.in.reference.txt) contigs.with.dups.txt | sort -V > contigs.without.dups.txt
+        cat contigs.without.dups.txt
+        ##########
+        # split the bam into those don't need dedup, and those that need
+        date
+        samtools view -@1 -bh \
+            -o no.duplicates.bam \
+            --regions-file contigs.without.dups.txt \
+            "~{local_bam}"  &
+        while IFS= read -r chromosome; do
+            samtools view -@1 -bh -o "${chromosome}".with.duplicates.bam "~{local_bam}" "${chromosome}" &
+        done < contigs.with.dups.txt
+        wait
+        date
+        ##########
+        # create per-chr duplicate signatures files
+        while IFS= read -r chromosome; do
+            grep -E "^${chromosome}\t" "~{base}".duplicates.txt > "${chromosome}.per-chr.duplicates.txt"
+        done < contigs.with.dups.txt
+        ls ./*.per-chr.duplicates.txt
+        ##########
+        # deduplicate those that need actions
+        date
+        while IFS= read -r chromosome; do
+            python3 /opt/remove_duplicate_ont_aln.py \
+                "${chromosome}".with.duplicates.bam \
+                --prefix "${chromosome}".dedup \
+                --annotations "${chromosome}.per-chr.duplicates.txt" &
+        done < contigs.with.dups.txt
+        wait
+        date
+        echo "######################################"
+        # merge, including those unmapped reads
+        date
+        samtools view -H "~{local_bam}" > original.header
+        rm "~{local_bam}" "~{local_bai}"
+        rm ./*.with.duplicates.bam
+
+        echo "no.duplicates.bam" > to.merge.list
+        ls ./*.dedup.bam >> to.merge.list
+
+        samtools merge \
+            -@5 \
+            -o "~{prefix}.bam" \
+            -h original.header \
+            -c \
+            -b to.merge.list
+
+        date
+        echo "==========================================================="
+        echo "DONE"
+        samtools index -@3 "~{prefix}.bam"
+        cat ./*.per-chr.duplicates.txt > "~{prefix}.duplicate.signatures.txt"
+    >>>
+
+    output {
+        File corrected_bam = "~{prefix}.bam"
+        File corrected_bai = "~{prefix}.bam.bai"
+        File duplicate_record_signatures = "~{prefix}.duplicate.signatures.txt"
+        File duplicate_unmapped_readnames  =  "duplicated.unmapped.reads.txt"
+    }
+
+    #########################
+    RuntimeAttr default_attr = object {
+        cpu_cores:          8,
+        mem_gb:             32,
+        disk_gb:            disk_size,
+        boot_disk_gb:       10,
+        preemptible_tries:  0,
+        max_retries:        1,
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-bam-dedup:0.1.2"
+    }
+    RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
+    runtime {
+        cpu:                    select_first([runtime_attr.cpu_cores,         default_attr.cpu_cores])
+        memory:                 select_first([runtime_attr.mem_gb,            default_attr.mem_gb]) + " GiB"
+        disks: "local-disk " +  select_first([runtime_attr.disk_gb,           default_attr.disk_gb]) + " LOCAL"
+        bootDiskSizeGb:         select_first([runtime_attr.boot_disk_gb,      default_attr.boot_disk_gb])
+        preemptible:            select_first([runtime_attr.preemptible_tries, default_attr.preemptible_tries])
+        maxRetries:             select_first([runtime_attr.max_retries,       default_attr.max_retries])
+        docker:                 select_first([runtime_attr.docker,            default_attr.docker])
+    }
+}
