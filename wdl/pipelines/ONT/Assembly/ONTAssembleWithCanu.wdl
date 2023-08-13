@@ -68,7 +68,7 @@ workflow ONTAssembleWithCanu {
             draft_assembly = Canu.fa,
             model = medaka_model,
             prefix = basename(Canu.fa, ".fasta") + ".polished",
-            n_rounds = 3
+            n_rounds = 2
     }
 
     call Quast.Quast {
