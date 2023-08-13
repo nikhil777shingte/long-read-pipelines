@@ -84,6 +84,7 @@ task Correct {
              genomeSize=~{genome_size}m \
              corMaxEvidenceErate=0.15 \
              correctedErrorRate=~{error_rate} \
+             stopOnLowCoverage=0 \
              -nanopore \
              ~{reads}
     >>>
