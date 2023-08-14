@@ -31,7 +31,6 @@ task Quast {
         num_core=$(cat /proc/cpuinfo | awk '/^processor/{print $3}' | wc -l)
 
         quast --no-icarus \
-              "~{size_optimization}" \
               --threads "${num_core}" \
               ~{true='-r' false='' defined(ref)} \
               ~{select_first([ref, ""])} \
