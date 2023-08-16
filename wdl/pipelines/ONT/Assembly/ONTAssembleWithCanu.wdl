@@ -42,6 +42,7 @@ workflow ONTAssembleWithCanu {
         String prefix
 
         String gcs_out_root_dir
+        String genome_size
     }
 
     Map[String, String] ref_map = read_map(ref_map_file)
