@@ -13,8 +13,9 @@ workflow ONTAssembleWithCanu {
     }
     parameter_meta {
         gcs_fastq_dir:       "GCS path to unaligned CCS BAM files"
-
         ref_map_file:        "table indicating reference sequence and auxillary file locations"
+
+        genome_size:        "Genome size String for Canu"
 
         correct_error_rate:  "stringency for overlaps in Canu's correction step"
         trim_error_rate:     "stringency for overlaps in Canu's trim step"
@@ -56,7 +57,7 @@ workflow ONTAssembleWithCanu {
         input:
             reads = MergeFastqs.merged_fastq,
             prefix = prefix,
-            genome_size = ceil(ComputeGenomeLength.length/1000000.0),
+            genome_size = genome_size,
             correct_error_rate = correct_error_rate,
             trim_error_rate = trim_error_rate,
             assemble_error_rate = assemble_error_rate
