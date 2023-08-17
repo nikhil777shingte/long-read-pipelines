@@ -6,7 +6,7 @@ task Minimap2 {
     input {
         Array[File] reads
         File ref_fasta
-
+        File on_target_flanks_bed
         String RG
         String map_preset
 
@@ -23,6 +23,7 @@ task Minimap2 {
     parameter_meta {
         reads:            "query sequences to be mapped and aligned"
         ref_fasta:        "reference fasta"
+        on_target_flanks_bed:        "on_target_flanks_bed file for bedtools to select region of interest"
         RG:               "read group information to be supplied to parameter '-R' (note that tabs should be input as '\t')"
         map_preset:       "preset to be used for minimap2 parameter '-x'"
         tags_to_preserve: "sam tags to carry over to aligned bam file"
@@ -115,11 +116,17 @@ task Minimap2 {
 
         samtools calmd -b --no-PG ~{prefix}.pre.bam ~{ref_fasta} > ~{prefix}.bam
         samtools index -@${NUM_CPUS} ~{prefix}.bam
+
+        bedtools intersect -wo -abam ~{prefix}.bam -b ~{on_target_flanks_bed} -bed \
+        | cut -f 4,16 | sort -k1,1 | \
+        bedtools groupby -g 1 -c 2 -o count_distinct | \
+        awk '$2==2' | cut -f 1 > ~{prefix}.full_reads.txt
     >>>
 
     output {
         File aligned_bam = "~{prefix}.bam"
         File aligned_bai = "~{prefix}.bam.bai"
+        File full_reads_txt = "~{prefix}.full_reads.txt"
     }
 
     #########################
@@ -130,7 +137,7 @@ task Minimap2 {
         boot_disk_gb:       10,
         preemptible_tries:  3,
         max_retries:        2,
-        docker:             "us.gcr.io/broad-dsp-lrma/lr-align:0.1.28"
+        docker:             "us.gcr.io/broad-dsp-lrma/lr-cartographer:0.0.1"
     }
     RuntimeAttr runtime_attr = select_first([runtime_attr_override, default_attr])
     runtime {
