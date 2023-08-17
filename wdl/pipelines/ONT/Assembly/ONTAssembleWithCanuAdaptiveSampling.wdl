@@ -49,7 +49,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
 
         String gcs_out_root_dir
         String genome_size
-        File minimap_on_target_flanks_bed
+        String minimap_on_target_flanks_bed
         String minimap_RG
         String minimap_map_preset
         String minimap_tags_to_preserve
