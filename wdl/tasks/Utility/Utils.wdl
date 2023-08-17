@@ -1176,14 +1176,14 @@ task SelectReadsSeqkit {
 
         fastq_file=~{merged_fastq}
         full_reads=~{reads_full}
-        filt_reads=filtered_full_reads.~{merged_fastq}
+        filt_reads=filtered_full_reads.fq.gz
 
         seqkit grep -f $full_reads $fastq_file -o $filt_reads
 
     >>>
 
     output {
-        File filtered_full_reads_fastq = "filtered_full_reads.~{merged_fastq}"
+        File filtered_full_reads_fastq = "filtered_full_reads.fq.gz"
     }
 
     runtime {
