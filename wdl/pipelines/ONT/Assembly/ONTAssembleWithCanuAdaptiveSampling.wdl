@@ -76,9 +76,15 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
             prefix = prefix + ".minimap2"
     }
 
+    call Utils.SelectReadsSeqkit {
+        input:
+            merged_fastq =  MergeFastqs.merged_fastq,
+            reads_full =  Minimap2.full_reads_txt
+    }
+
     call Canu.Canu {
         input:
-            reads = MergeFastqs.merged_fastq,
+            reads = SelectReadsSeqkit.filtered_full_reads_fastq,
             prefix = prefix,
             genome_size = genome_size,
             correct_error_rate = correct_error_rate,

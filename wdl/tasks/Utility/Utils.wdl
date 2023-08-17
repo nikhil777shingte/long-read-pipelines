@@ -1152,6 +1152,51 @@ task ConvertReads {
     }
 }
 
+task SelectReadsSeqkit {
+
+    meta {
+        description : "Select reads from merged fastq files as per input -f file"
+    }
+
+    parameter_meta {
+        merged_fastq: "The fastq file"
+        reads_full: "File with id for full reads"
+    }
+
+    input {
+        File merged_fastq
+        File reads_full
+
+    }
+
+    Int disk_size = 3 * ceil(size(merged_fastq, "GB"))
+
+    command <<<
+        set -euxo pipefail
+
+        fastq_file=~{merged_fastq}
+        full_reads=~{reads_full}
+        filt_reads=filtered_full_reads.~{merged_fastq}
+
+        seqkit grep -f $full_reads $fastq_file -o $filt_reads
+
+    >>>
+
+    output {
+        File filtered_full_reads_fastq = "filtered_full_reads.~{merged_fastq}"
+    }
+
+    runtime {
+        cpu:                    4
+        memory:                 "8 GiB"
+        disks:                  "local-disk " +  disk_size + " HDD"
+        bootDiskSizeGb:         10
+        preemptible:            2
+        maxRetries:             0
+        docker:                 "quay.io/broad-long-read-pipelines/lr-pacasus:0.3.0"
+    }
+}
+
 task BamToBed {
 
     meta {
