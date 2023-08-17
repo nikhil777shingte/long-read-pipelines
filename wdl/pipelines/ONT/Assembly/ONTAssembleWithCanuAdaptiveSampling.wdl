@@ -52,7 +52,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         String minimap_on_target_flanks_bed
         String minimap_RG
         String minimap_map_preset
-        String minimap_tags_to_preserve
+        Array[String] minimap_tags_to_preserve
         String minimap_prefix
     }
 
@@ -67,7 +67,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
 
     call Minimap2.Minimap2 {
         input:
-            reads = MergeFastqs.merged_fastq,
+            reads = ListFilesOfType.files,
             ref_fasta = ref_map['fasta'],
             on_target_flanks_bed = minimap_on_target_flanks_bed,
             RG = minimap_RG,
