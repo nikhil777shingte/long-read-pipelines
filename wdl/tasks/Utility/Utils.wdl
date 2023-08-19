@@ -1228,8 +1228,11 @@ task Crispy {
 
         set -x
 
-        filename_actual=`basename $merged_fastq .fq.gz`
-        gunzip $merged_fastq
+        fastq_file=~{merged_fastq}
+        ref_seq_file=~{ref_seq_file}
+
+        filename_actual=`basename $fastq_file .fq.gz`
+        gunzip $fastq_file
         mv $filename_actual.fq $filename_actual.fastq
 
 
