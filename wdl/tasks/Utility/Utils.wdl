@@ -1221,6 +1221,7 @@ task Crispy {
     }
 
     String gcs_output_dir = sub(outdir + "/", "/+$", "")
+    Int disk_size = 3 * ceil(size(merged_fastq, "GB"))
 
     command <<<
         #!/bin/bash
@@ -1503,8 +1504,8 @@ task Crispy {
 
     runtime {
         cpu:                    4
-        memory:                 16
-        disks:                  50
+        memory:                 "16 GiB"
+        disks:                  "local-disk " +  disk_size + " HDD"
         bootDiskSizeGb:         10
         preemptible:            2
         maxRetries:             0
