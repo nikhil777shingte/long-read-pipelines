@@ -1228,6 +1228,8 @@ task Crispy {
 
         set -x
 
+        pwd
+
         fastq_file=~{merged_fastq}
         ref_seq_file=~{ref_seq_file}
 
