@@ -32,6 +32,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         minimap_map_preset:       "preset to be used for minimap2 parameter '-x'"
         minimap_tags_to_preserve: "sam tags to carry over to aligned bam file"
         minimap_prefix:           "[default-valued] prefix for output BAM"
+        crispy_script_file:           "Crispy python script file"
         crispy_ref_seq_file:           "File containing Reference sequence for Crispy"
         crispy_seq_start: "Start equence for Crispy"
         crispy_seq_end: "End sequence for Crispy"
@@ -59,6 +60,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         String minimap_map_preset
         Array[String] minimap_tags_to_preserve
         String minimap_prefix
+        String crispy_script_file
         String crispy_ref_seq_file
         String crispy_seq_start
         String crispy_seq_end
@@ -95,6 +97,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
     call Utils.Crispy {
         input:
             merged_fastq =  MergeFastqs.merged_fastq,
+            crispy = crispy_script_file,
             ref_seq_file =  crispy_ref_seq_file,
             seq_start = crispy_seq_start,
             seq_end = crispy_seq_end,
