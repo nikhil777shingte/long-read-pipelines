@@ -50,7 +50,7 @@ task Minimap2 {
         if [[ $rg_len -ne 0 ]] ; then
             MAP_PARAMS="-ayYL --MD --eqx -x ~{map_preset} -R ~{RG} -t ${NUM_CPUS} ~{ref_fasta}"
         else
-            MAP_PARAMS="-ayYL --MD --eqx -x ~{map_preset} -t ${NUM_CPUS} ~{ref_fasta}"
+            MAP_PARAMS="-ax ~{map_preset} -t ${NUM_CPUS} --secondary=no ~{ref_fasta}"
         fi
 
         SORT_PARAMS="-@${NUM_CPUS} -m${MEM_FOR_SORT}G --no-PG -o ~{prefix}.pre.bam"
