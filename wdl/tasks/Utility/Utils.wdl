@@ -1503,12 +1503,12 @@ task Crispy {
 
     runtime {
         cpu:                    4
-        memory:                 8
-        disks:                  20
+        memory:                 16
+        disks:                  50
         bootDiskSizeGb:         10
         preemptible:            2
         maxRetries:             0
-        docker:                 "quay.io/broad-long-read-pipelines/lr-pacasus:0.3.0"
+        docker:                 "hailgenetics/hail:0.2.105"
     }
 }
 
