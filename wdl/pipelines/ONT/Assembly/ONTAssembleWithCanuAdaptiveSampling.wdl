@@ -32,6 +32,11 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         minimap_map_preset:       "preset to be used for minimap2 parameter '-x'"
         minimap_tags_to_preserve: "sam tags to carry over to aligned bam file"
         minimap_prefix:           "[default-valued] prefix for output BAM"
+        crispy_ref_seq_file:           "File containing Reference sequence for Crispy"
+        crispy_seq_start: "Start equence for Crispy"
+        crispy_seq_end: "End sequence for Crispy"
+        crispy_test_list: "WT or MUT sequence for Crispy e.g. MUT|ATCGTA|WT|TGACATC..."
+        crispy_outdir: "File containing Reference sequence for Crispy"
     }
 
     input {
@@ -54,6 +59,11 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         String minimap_map_preset
         Array[String] minimap_tags_to_preserve
         String minimap_prefix
+        String crispy_ref_seq_file
+        String crispy_seq_start
+        String crispy_seq_end
+        String crispy_test_list
+        String crispy_outdir
     }
 
     Map[String, String] ref_map = read_map(ref_map_file)
@@ -80,6 +90,16 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
         input:
             merged_fastq =  MergeFastqs.merged_fastq,
             reads_full =  Minimap2.full_reads_txt
+    }
+
+    call Utils.Crispy {
+        input:
+            merged_fastq =  MergeFastqs.merged_fastq,
+            ref_seq_file =  crispy_ref_seq_file,
+            seq_start = crispy_seq_start,
+            seq_end = crispy_seq_end,
+            test_list = crispy_test_list,
+            outdir = crispy_outdir
     }
 
     call Canu.Canu {
