@@ -1226,6 +1226,12 @@ task Crispy {
         #!/bin/bash
 
         set -x
+
+        filename_actual=`basename $merged_fastq .fq.gz`
+        gunzip $merged_fastq
+        mv $filename_actual.fq $filename_actual.fastq
+
+
         ref_seq="`cat $ref_seq_file | grep -v ">" | tr -d '\n'`"
 
         python3 <<EOF
