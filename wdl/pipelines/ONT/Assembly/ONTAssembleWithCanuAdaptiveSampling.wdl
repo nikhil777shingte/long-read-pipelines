@@ -96,7 +96,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
 
     call Utils.Crispy {
         input:
-            merged_fastq =  SelectReadsSeqkit.merged_fastq,
+            merged_fastq =  SelectReadsSeqkit.filtered_full_reads_fastq,
             crispy = crispy_script_file,
             ref_seq_file =  crispy_ref_seq_file,
             seq_start = crispy_seq_start,
