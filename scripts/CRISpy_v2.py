@@ -59,9 +59,9 @@ def get_parameters():
     else:
         fastq_files = glob.glob(fastq_files)
     # End additions
-    print "Input files:"
+    print("Input files:")
     for f in fastq_files:
-        print "  " + f
+        print("  " + f)
     return ID,ref_seq,seq_start,seq_end,fastq_files,test_list
 
 # Added by ariva@ufl.edu
@@ -171,7 +171,7 @@ def search_fastq(ID,ref_seq,seq_start,seq_end,fastq_files,test_list):
     for x,y in pairwise(test_list):          #Create an ordered dictionary of items in test_list
         test_dict[x] = y
     save_dir = os.getcwd()+"/"+ str(ID) + "/"
-    print "Working directory: {}".format(str(os.getcwd()))#save_dir
+    print("Working directory: {}".format(str(os.getcwd())))#save_dir
     make_project_directory(save_dir)
     file_name = save_dir+'results_counter ' + ID + '.txt'
     with open(file_name, "w") as f:
@@ -182,17 +182,17 @@ def search_fastq(ID,ref_seq,seq_start,seq_end,fastq_files,test_list):
         f.write("Test_Sequences: \n")
         for key, value in test_dict.iteritems():                #Go through the test_dict and write each item that is being searched for
             f.write(str(key)+": "+value+'\n')
-            print key, value
+            print(key, value)
             dict_Counters[str(key)]=0
 
-        print 'Expected WT distance: {}'.format(wt_distance)     #The expected distance between  seq_start and seq_end if the DNA is WT/ REF
+        print('Expected WT distance: {}'.format(wt_distance))     #The expected distance between  seq_start and seq_end if the DNA is WT/ REF
         if wt_distance < 0:
             f.write("\n\n WARNING: THIS IS NOT GOING TO GIVE YOU THE FULL DATA. YOUR EXPECTED WT DISTANCE IS LESS THAN 0, it is: {}\n  Check your seq_start and seq_end again\n".format(wt_distance))
 
         else:
             pass
 
-        print "Program Running"
+        print("Program Running")
 
         for each_fastq_file in fastq_files:   #For each clone (really each fastq file in directory), open the file as "clone"
             c_Counter = 0                     #Reset control counter to 0, this counter counts how many times both seq_start and seq_end are found in a line.
@@ -243,7 +243,7 @@ def search_fastq(ID,ref_seq,seq_start,seq_end,fastq_files,test_list):
             if c_Counter == 0 :
                 pass
             elif c_Counter > 10 :  #if more than 10 control read counts, record data
-                print"{}: Total_reads:{}, {}".format(fastq_name,str(c_Counter).ljust(2), dict_Counters.items())
+                print("{}: Total_reads:{}, {}".format(fastq_name,str(c_Counter).ljust(2), dict_Counters.items()))
                 fastq_counter += 1
                 test_list_string=str(" Testing: ")
                 for k,v in dict_Counters.items():
@@ -259,7 +259,7 @@ def search_fastq(ID,ref_seq,seq_start,seq_end,fastq_files,test_list):
                  pass
 
 
-        print "SUMMARY"
+        print("SUMMARY")
         make_project_directory(ID)
         #print master_distance_and_count_summary
         pd_columns = ['Name','Sample','Total', 'Total_indel', '#1-Indel','#1-Reads(%)','#2-Indel','#2-Reads(%)','#3-Indel','#3-Reads(%)','#4-Indel','#4-Reads(%)','#5-Indel','#5-Reads(%)',
@@ -278,11 +278,11 @@ def search_fastq(ID,ref_seq,seq_start,seq_end,fastq_files,test_list):
         try:
             csv_summary_df.to_csv(str(save_dir+ID)+'.csv')    #Filename to save csv as
         except (IOError):
-            print 'ERROR.  Script did not execute properly.'
-            print ('The requested .csv file {} is either open or you do not have access to it.  If open, please close file and rerun program').format(str(save_dir+ID)+'.csv')
+            print('ERROR.  Script did not execute properly.')
+            print(('The requested .csv file {} is either open or you do not have access to it.  If open, please close file and rerun program').format(str(save_dir+ID)+'.csv'))
 
         master_Record = sorted(master_Record)
-        print "Total wells with product:", fastq_counter
+        print("Total wells with product:", fastq_counter)
         write_to_file(master_Record,f)
     f.close()
 
