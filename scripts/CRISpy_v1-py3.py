@@ -6,7 +6,6 @@ import csv
 from collections import Counter
 from collections import OrderedDict
 import pandas as pd
-import sys
 
 #CRIS.py
 
