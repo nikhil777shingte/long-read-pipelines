@@ -36,8 +36,8 @@ task Minimap2 {
 
     Boolean do_preserve_tags = if length(tags_to_preserve) != 0 then true else false
 
-    Int cpus = 4
-    Int mem = 30
+    Int cpus = 8
+    Int mem = 60
 
     command <<<
         set -euxo pipefail
