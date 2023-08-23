@@ -117,7 +117,7 @@ workflow ONTAssembleWithCanuAdaptiveSampling {
 
     call Medaka.MedakaPolish {
         input:
-            basecalled_reads = MergeFastqs.merged_fastq,
+            basecalled_reads = SelectReadsSeqkit.filtered_full_reads_fastq,
             draft_assembly = Canu.fa,
             model = medaka_model,
             prefix = basename(Canu.fa, ".fasta") + ".polished",
