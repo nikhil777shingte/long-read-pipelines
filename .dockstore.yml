@@ -48,6 +48,9 @@ workflows:
 - name: ONTAssembleWithCanuAdaptiveSampling
   subclass: wdl
   primaryDescriptorPath: /wdl/pipelines/ONT/Assembly/ONTAssembleWithCanuAdaptiveSampling.wdl
+- name: RunCrispy
+  subclass: wdl
+  primaryDescriptorPath: /wdl/pipelines/ONT/Assembly/RunCrispy.wdl
 - name: ONTAssembleWithFlye
   subclass: wdl
   primaryDescriptorPath: /wdl/pipelines/ONT/Assembly/ONTAssembleWithFlye.wdl
