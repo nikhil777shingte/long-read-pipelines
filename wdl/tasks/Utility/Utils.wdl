@@ -1280,7 +1280,7 @@ task CrispyStandalone {
     }
 
     input {
-        File fastq_file_directory
+        String fastq_file_directory
         File crispy
         File ref_seq_file
         String seq_start
@@ -1301,6 +1301,9 @@ task CrispyStandalone {
         fastq_file_directory=~{fastq_file_directory}
         ref_seq_file=~{ref_seq_file}
         crispy=~{crispy}
+
+
+        gsutil -m cp -r ~{fastq_file_directory}/* /cromwell_root/
 
 
         ref_seq="`cat $ref_seq_file | grep -v ">" | tr -d '\n'`"
