@@ -28,7 +28,7 @@ workflow RunCrispy {
 
     call Utils.CrispyStandalone {
         input:
-            merged_fastq =  fastq_file_directory,
+            fastq_file_directory =  fastq_file_directory,
             crispy = script_file,
             ref_seq_file =  ref_seq_file,
             seq_start = seq_start,

@@ -1301,7 +1301,7 @@ task CrispyStandalone {
         fastq_file_directory=~{fastq_file_directory}
         ref_seq_file=~{ref_seq_file}
         crispy=~{crispy}
-        
+
 
         ref_seq="`cat $ref_seq_file | grep -v ">" | tr -d '\n'`"
 
