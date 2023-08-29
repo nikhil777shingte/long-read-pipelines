@@ -8,7 +8,7 @@ workflow RunCrispy {
     }
     parameter_meta {
         script_file:           "Crispy python script file"
-        fastq_file:           "fastq input file"
+        fastq_file_directory:           "fastq input file directory"
         ref_seq_file:           "File containing Reference sequence for Crispy"
         seq_start: "Start equence for Crispy"
         seq_end: "End sequence for Crispy"
@@ -18,7 +18,7 @@ workflow RunCrispy {
 
     input {
         String script_file
-        String fastq_file
+        String fastq_file_directory
         String ref_seq_file
         String seq_start
         String seq_end
@@ -26,9 +26,9 @@ workflow RunCrispy {
         String outdir
     }
 
-    call Utils.Crispy {
+    call Utils.CrispyStandalone {
         input:
-            merged_fastq =  fastq_file,
+            merged_fastq =  fastq_file_directory,
             crispy = script_file,
             ref_seq_file =  ref_seq_file,
             seq_start = seq_start,

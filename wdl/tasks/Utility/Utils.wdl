@@ -1264,6 +1264,68 @@ task Crispy {
     }
 }
 
+task CrispyStandalone {
+    meta {
+        description: "Run cripsy on the selected fastq reads"
+    }
+
+    parameter_meta {
+        fastq_file_directory: "The fastq file"
+        crispy: "Crispy script"
+        ref_seq_file: "File containing Reference sequence for Crispy"
+        seq_start: "Start equence for Crispy"
+        seq_end: "End sequence for Crispy"
+        test_list: "WT or MUT sequence for Crispy e.g. MUT|ATCGTA|WT|TGACATC..."
+        outdir: "File containing Reference sequence for Crispy"
+    }
+
+    input {
+        File fastq_file_directory
+        File crispy
+        File ref_seq_file
+        String seq_start
+        String seq_end
+        String test_list
+        String outdir
+    }
+
+    String gcs_output_dir = sub(outdir + "/", "/+$", "")
+
+    command <<<
+        #!/bin/bash
+
+        set -x
+
+        pwd
+
+        fastq_file_directory=~{fastq_file_directory}
+        ref_seq_file=~{ref_seq_file}
+        crispy=~{crispy}
+        
+
+        ref_seq="`cat $ref_seq_file | grep -v ">" | tr -d '\n'`"
+
+        python3 $crispy $ref_seq ~{seq_start} ~{seq_end} ~{test_list}
+
+        gsutil -m cp -r Locus_1 ~{gcs_output_dir}
+
+    >>>
+
+    output {
+        String gcs_dir = gcs_output_dir
+    }
+
+    runtime {
+        cpu:                    4
+        memory:                 "8 GiB"
+        disks:                  "local-disk " +  50 + " HDD"
+        bootDiskSizeGb:         10
+        preemptible:            2
+        maxRetries:             0
+        docker:                 "hailgenetics/hail:0.2.105"
+    }
+}
+
 task BamToBed {
 
     meta {
